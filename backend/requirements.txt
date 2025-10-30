@@ -1,0 +1,10 @@
+Flask
+Flask-Cors
+pandas
+requests
+beautifulsoup4
+matplotlib
+seaborn
+scikit-learn
+scipy
+psycopg2-binary
