@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Assistente de Pesquisa "Sacy" (Nome Provisório)
 
-## Getting Started
+Este é um projeto full-stack que funciona como um assistente de pesquisa inteligente, desenhado para transformar a sobrecarga de informação da web em conhecimento acionável. A aplicação permite ao utilizador pesquisar um tópico, receber um resumo formatado e, em seguida, interagir com esse resumo usando IA generativa para simplificar o conteúdo ou criar um quiz interativo.
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+✨ Funcionalidades
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Pesquisa e Resumo Inteligente: O utilizador insere um tópico (ex: "Marte") e o backend Python pesquisa na web, faz scraping do conteúdo e devolve um resumo completo formatado em HTML, incluindo imagens e links.
+Limpeza de HTML no Frontend: Uma função cleanHtmlResult no React interceta o HTML do backend e remove à força estilos problemáticos (como background-color: #ffffff), garantindo a consistência visual no modo escuro.
+Simplificação com IA (Gemini): Um botão "Simplificar Resumo" envia o resumo para a API Gemini e pede uma versão mais simples, formatada em HTML com emojis e tópicos, ideal para iniciantes.
+Quiz Interativo (Gemini): Um botão "Gerar Quiz" envia o resumo para a API Gemini e pede um quiz de escolha múltipla (em formato JSON). O frontend constrói um formulário interativo onde o utilizador pode responder e ser corrigido.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+🚀 Arquitetura do Projeto
 
-## Learn More
+Este projeto tem uma arquitetura híbrida interessante que divide as tarefas:
+Fluxo 1: Backend Local (Python/Flask)
+Usado para a pesquisa principal, que exige scraping da web (uma tarefa que não pode ser feita no browser).
+Fluxo: React -> Flask -> AgentLiteratura -> Web (Scraping) -> Flask -> React.
+Fluxo 2: API Externa (Gemini)
+Usado para tarefas de IA pura (simplificação e geração de quiz), que podem ser feitas diretamente no browser.
+Fluxo: React -> API Gemini (JSON/HTML) -> React.
 
-To learn more about Next.js, take a look at the following resources:
+graph TD
+    subgraph Frontend (Browser)
+        A[Utilizador] --> B{Dashboard (React)};
+        B --"1. Pesquisa Principal"--> C[Backend: Flask];
+        B --"2. Funções Extra (Quiz/Simplificar)"--> G[API Gemini];
+        G --> B;
+    end
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    subgraph Backend (Localhost:5000)
+        C --"3. Chama Agente"--> E[agent_literatura.py];
+        E --"4. Pesquisa e faz Scraping"--> F[(Web / Wikipedia)];
+        F --> E;
+        E --"5. Cria Resumo em HTML"--> C;
+    end
+    
+    C --"6. Devolve JSON com HTML"--> B;
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+🛠️ Tecnologias Utilizadas
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Frontend:
+React / Next.js
+Tailwind CSS (para estilização)
+TypeScript
+Backend:
+Python
+Flask (como servidor API)
+Flask-CORS (para permitir a comunicação entre localhost:3000 e localhost:5000)
+(Bibliotecas do agent_literatura como requests, beautifulsoup4, etc.)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+APIs:
+API Google Gemini (para simplificação e geração de quiz)
