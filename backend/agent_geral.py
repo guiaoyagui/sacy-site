@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from enum import Enum
 from openai import OpenAI
 
-from agent_csv import AgentCSV
 from agent_literatura import AgentLiteratura
 from agent_missoes import AgentMissoes
 
@@ -45,7 +44,7 @@ class AgentGeral:
             AgentType.LITERATURA: "Agent Especialista em Literatura (Research Analyst)",
             AgentType.MISSOES: "Agent Especialista em Missões (Mission Planner)"
         }
-        self.agent_csv = AgentCSV()
+        
         self.agent_literatura = AgentLiteratura()
         self.agent_missoes = AgentMissoes()
 

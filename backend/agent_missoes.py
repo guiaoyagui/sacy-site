@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Agent Especialista em Missões (Mission Planner)
-Insights acionáveis para planejamento
-"""
-
 import json
 from typing import Dict, Any, List, Optional
 
