@@ -6,7 +6,7 @@ from markdown import markdown
 # --- Configuração do Cliente Gemini ---
 # (Esta API Key é usada internamente pelos agentes, não pelo servidor)
 try:
-    API_KEY = "" # Deixe em branco
+    API_KEY = "AIzaSyDTuho3L8K7DX0LYsIcLKYlLbRF3EN5gW4" # Deixe em branco
     if not API_KEY:
         API_KEY = os.environ.get("GEMINI_API_KEY")
 

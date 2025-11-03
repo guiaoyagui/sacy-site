@@ -130,4 +130,3 @@ const IaChat: React.FC = () => {
 };
 
 export default IaChat;
-
