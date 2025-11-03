@@ -554,6 +554,7 @@ export default function DashboardNext() {
                                 name={`question-${index}`}
                                 value={altIndex}
                                 checked={isSelected}
+
                                 onChange={() => handleAnswerSelect(index, altIndex)}
                                 disabled={isSubmitted}
                                 className="w-4 h-4 mr-3 text-teal-400 bg-gray-600 border-gray-500 focus:ring-teal-500 focus:ring-2"

@@ -1,10 +1,6 @@
-Flask
-Flask-Cors
-pandas
+flask
+flask-cors
+markdown
+google-generativeai
 requests
-beautifulsoup4
-matplotlib
-seaborn
-scikit-learn
-scipy
-psycopg2-binary
+ddgs
