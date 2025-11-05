@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "../globals.css";
 import { Inter } from "next/font/google";
+import "katex/dist/katex.min.css";
+
 
 export const metadata: Metadata = {
   title: "SacyIA",
@@ -17,7 +19,7 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export default function RootLayout({
+export default function RootLayout({ 
   children,
 }: Readonly<{
   children: React.ReactNode;

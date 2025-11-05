@@ -1,85 +1,104 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { LogOut, Settings, User, ChevronDown } from "lucide-react";
+import React, { useState, useRef, useEffect } from 'react';
+import { LogOut, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { signOut } from 'firebase/auth';
 
-interface UserProfileProps {
-  isLoggedIn?: boolean;
-  userName?: string;
-  userInitials?: string;
-}
+const UserProfile: React.FC = () => {
+  const { user, auth } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-const UserProfile: React.FC<UserProfileProps> = ({
-  isLoggedIn = false,
-  userName = "Usuário",
-  userInitials = "U",
-}) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Fecha o dropdown se o usuário clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
 
-  const handleLogout = () => {
-    setIsMenuOpen(false);
-    // Aqui você pode adicionar a lógica de logout
-    console.log("Logout");
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // Redireciona para a página de login após o logout
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      alert('Não foi possível sair da conta. Tente novamente.');
+    }
   };
 
-  const handleSettings = () => {
-    setIsMenuOpen(false);
-    // Aqui você pode adicionar a lógica de configurações
-    console.log("Settings");
-  };
+  // Se o usuário não estiver logado, não deve renderizar este componente
+  // (Embora a proteção de rota no dashBoard/page.tsx já trate disso)
+  if (!user) {
+    return null;
+  }
+
+  // Obtém o nome de exibição ou usa o e-mail como fallback
+  const displayName = user.displayName || user.email || 'Usuário Sacy';
+  const displayEmail = user.email || 'Sem e-mail';
+  const userInitial = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className="mt-auto pt-6 border-t border-gray-700">
-      {isLoggedIn ? (
-        <div className="relative">
+    <div className="absolute bottom-4 left-4 z-50" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-3 p-2 rounded-xl bg-[#1e1e1e] hover:bg-[#2a2a2a] transition duration-200 cursor-pointer text-white shadow-lg"
+      >
+        {/* Avatar */}
+        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg font-bold">
+          {userInitial}
+        </div>
+        
+        {/* Informações do Usuário */}
+        <div className="text-left hidden sm:block">
+          <p className="font-medium text-sm truncate max-w-[120px]">{displayName}</p>
+          <p className="text-xs text-gray-400">Nível 1</p>
+        </div>
+
+        {/* Ícone de Dropdown */}
+        <div className="text-gray-400">
+          {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </div>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute bottom-full mb-2 w-full min-w-[200px] bg-[#1e1e1e] rounded-xl shadow-2xl overflow-hidden">
+          {/* Header do Dropdown (opcional, mostra e-mail) */}
+          <div className="p-3 border-b border-[#2a2a2a]">
+            <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+            <p className="text-xs text-gray-400 truncate">{displayEmail}</p>
+          </div>
+
+          {/* Opções */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-800/50 hover:bg-gray-700 transition-all duration-200"
+            onClick={() => {
+              // Lógica para ir para a página de perfil (se existir)
+              alert('Funcionalidade de Perfil em desenvolvimento!');
+              setIsOpen(false);
+            }}
+            className="flex items-center w-full p-3 text-sm text-white hover:bg-blue-600/20 transition duration-150"
           >
-            <div className="flex items-center gap-3">
-              {/* Avatar */}
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
-                {userInitials}
-              </div>
-              {/* Nome do usuário */}
-              <div className="text-left">
-                <p className="text-sm font-medium text-white">{userName}</p>
-                <p className="text-xs text-gray-400">Grátis</p>
-              </div>
-            </div>
-            {/* Ícone de menu */}
-            <ChevronDown
-              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                isMenuOpen ? "rotate-180" : ""
-              }`}
-            />
+            <User size={18} className="mr-3 text-blue-400" />
+            Ver Perfil
           </button>
 
-          {/* Menu dropdown */}
-          {isMenuOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 rounded-lg border border-gray-700 shadow-lg overflow-hidden z-50">
-              <button
-                onClick={handleSettings}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 transition-all duration-200"
-              >
-                <Settings className="w-4 h-4" />
-                Configurações
-              </button>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-gray-700 transition-all duration-200 border-t border-gray-700"
-              >
-                <LogOut className="w-4 h-4" />
-                Sair
-              </button>
-            </div>
-          )}
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full p-3 text-sm text-red-400 hover:bg-red-600/20 transition duration-150 border-t border-[#2a2a2a]"
+          >
+            <LogOut size={18} className="mr-3" />
+            Sair da Conta
+          </button>
         </div>
-      ) : (
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 shadow-md hover:shadow-lg">
-          <User className="w-4 h-4" />
-          Fazer Login
-        </button>
       )}
     </div>
   );

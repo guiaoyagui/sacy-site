@@ -1,9 +1,58 @@
-"use client";
+'use client';
 
 import Link from "next/link";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle, LogIn } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
+  // Define o conteúdo do botão principal com base no estado de autenticação
+  let mainButton;
+  if (loading) {
+    // Estado de carregamento
+    mainButton = (
+      <button
+        disabled
+        className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-full shadow-2xl transition-all duration-300 ease-in-out
+          bg-gray-600 text-white cursor-not-allowed
+          ring-4 ring-gray-600/30"
+      >
+        A carregar...
+      </button>
+    );
+  } else if (user) {
+    // Usuário logado: Ir para o Dashboard
+    mainButton = (
+      <Link
+        href="/dashBoard"
+        className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-full shadow-2xl transition-all duration-300 ease-in-out
+          bg-blue-600 hover:bg-blue-500 text-white
+          transform hover:scale-105 hover:shadow-blue-600/50
+          ring-4 ring-blue-600/30"
+      >
+        <MessageCircle className="w-6 h-6 mr-3" />
+        Ir para o Chat
+        <ArrowRight className="w-5 h-5 ml-2" />
+      </Link>
+    );
+  } else {
+    // Usuário deslogado: Entrar / Registar
+    mainButton = (
+      <Link
+        href="/login"
+        className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-full shadow-2xl transition-all duration-300 ease-in-out
+          bg-blue-600 hover:bg-blue-500 text-white
+          transform hover:scale-105 hover:shadow-blue-600/50
+          ring-4 ring-blue-600/30"
+      >
+        <LogIn className="w-6 h-6 mr-3" />
+        Entrar / Registar
+        <ArrowRight className="w-5 h-5 ml-2" />
+      </Link>
+    );
+  }
+
   return (
     <main className="relative flex flex-col items-center justify-center min-h-screen bg-black text-white px-6 py-12 overflow-hidden">
       {/* Vídeo de Fundo */}
@@ -42,18 +91,8 @@ export default function Home() {
           transformar qualquer tópico complexo em conhecimento prático.
         </p>
 
-        {/* Botão "Chat" */}
-        <Link
-          href="/dashboardNext"
-          className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-full shadow-2xl transition-all duration-300 ease-in-out
-            bg-blue-600 hover:bg-blue-500 text-white
-            transform hover:scale-105 hover:shadow-blue-600/50
-            ring-4 ring-blue-600/30"
-        >
-          <MessageCircle className="w-6 h-6 mr-3" />
-          Acessar Chat
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </Link>
+        {/* Botão Principal (Renderização Condicional) */}
+        {mainButton}
       </div>
 
       {/* Footer Minimalista */}
