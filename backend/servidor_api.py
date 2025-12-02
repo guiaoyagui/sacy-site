@@ -16,9 +16,9 @@ from agent_pesquisa import AgentPesquisa
 from agentes_especializados import (
     agente_modo_exatas,
     agente_modo_arte_placeholder,
-    agente_modo_literatura,          # ✅ agora importando o agente REAL
-    agente_modo_quimica,             # ✅ agora importando o agente REAL
-    agente_modo_geografia,           # ✅ agora importando o agente REAL
+    agente_modo_literatura,          
+    agente_modo_quimica,             
+    agente_modo_geografia,           
     agente_modo_redacao
 )
 
@@ -100,7 +100,29 @@ def endpoint_pesquisa_ia():
     if "erro" in dados:
         return jsonify(dados), 500
 
+    # ✅ Correção real: remover duplicações sem quebrar texto
+    resumo_raw = dados.get("resumo", "")
+
+    # Remover linhas duplicadas EXATAS
+    linhas = resumo_raw.split("\n")
+    linhas_unicas = []
+    for l in linhas:
+        trecho = l.strip()
+        if trecho and trecho not in linhas_unicas:
+            linhas_unicas.append(trecho)
+
+    resumo_raw = "\n".join(linhas_unicas)
+
+    # ✅ Remover duplicações consecutivas curtas (ex: "texto texto")
+    resumo_raw = re.sub(r"\b(\w[\wÀ-ú.,;:!?]+)\s+\1\b", r"\1", resumo_raw)
+
+    # Atualizar no objeto
+    dados["resumo"] = resumo_raw
+
+
+    # ✅ Agora sim, converter para HTML
     resumo_html = markdown(dados.get("resumo", ""))
+
     link_google = f"https://www.google.com/search?q={consulta.replace(' ', '+')}"
     fontes_html = f"""
     <a href='{link_google}' target='_blank' style='display:inline-block; margin-top:15px; color:#7dd3fc;
@@ -192,7 +214,6 @@ def endpoint_pesquisa_enem():
         return endpoint_pesquisa_ia()
 
 
-# --- ✅ NOVO ENDPOINT: GERAR QUIZ ---
 @app.route("/gerar-quiz", methods=["POST"])
 def gerar_quiz():
     """
@@ -216,7 +237,8 @@ def gerar_quiz():
             {
               "pergunta": "string",
               "alternativas": ["A", "B", "C", "D"],
-              "correta": 0
+              "correta": 0,
+              "resposta_texto": "string" // NOVO CAMPO: O texto da alternativa correta
             }
           ]
         }
@@ -233,6 +255,41 @@ def gerar_quiz():
             return jsonify({"erro": "Não foi possível extrair JSON válido da IA."}), 500
 
         quiz_json = json.loads(match.group(0))
+        
+        # --- CORREÇÃO MÍNIMA: Pós-processamento para garantir que o índice 'correta' está certo ---
+        for pergunta in quiz_json.get("quiz", []):
+            resposta_texto = pergunta.pop("resposta_texto", None) # Remove o campo extra
+            if resposta_texto:
+                # Tenta encontrar o índice da resposta_texto nas alternativas
+                try:
+                    # Função de normalização para comparação robusta
+                    def normalize_text(text):
+                        import unicodedata
+                        # 1. Remover A), B), etc.
+                        text = re.sub(r'^\s*[A-D]\)\s*', '', text)
+                        # 2. Converter para minúsculas
+                        text = text.lower()
+                        # 3. Remover acentos
+                        text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+                        # 4. Remover tudo que não é letra, número ou espaço
+                        text = re.sub(r'[^\w\s]', '', text)
+                        text = re.sub(r'\s+', ' ', text).strip()
+                        return text
+
+                    alternativas_limpas = [normalize_text(alt) for alt in pergunta["alternativas"]]
+                    resposta_limpa = normalize_text(resposta_texto)
+                    
+                    # Tenta encontrar o índice da resposta correta
+                    novo_indice_correto = alternativas_limpas.index(resposta_limpa)
+                    
+                    # Se o índice for encontrado, atualiza o campo 'correta'
+                    pergunta["correta"] = novo_indice_correto
+                    
+                except ValueError:
+                    # Se não encontrar, mantém o índice original gerado pela IA (ou 0 como fallback)
+                    print(f"⚠️ Alerta: Não foi possível validar o índice da resposta correta para a pergunta: {pergunta['pergunta']}")
+        # --- FIM DA CORREÇÃO MÍNIMA ---
+        
         return jsonify(quiz_json)
 
     except Exception as e:

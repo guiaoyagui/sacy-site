@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Sacy - Seu assistente de estudos",
   description: "A inteligência artificial que te ajuda a estudar para o ENEM e vestibulares.",
+  icons: {
+    icon: "https://i.imgur.com/J2SO4bJ.png", // ✅ miniatura (favicon) do site
+  },
 };
 
 export default function RootLayout({

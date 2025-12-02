@@ -7,7 +7,7 @@ def buscar_na_wikipedia(consulta):
     Busca um resumo na Wikipedia usando a API oficial REST_v1.
     Isso substitui o método anterior de web scraping (com BeautifulSoup), 
     que era instável e sujeito a quebras.
-    """
+    """ 
     
     # Prepara a URL da API da Wikipedia.
     # A API é sensível a maiúsculas/minúsculas e espera espaços como "_" (underscores).

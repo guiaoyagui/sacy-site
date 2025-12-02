@@ -10,8 +10,9 @@ const apiKey = "AIzaSyDTuho3L8K7DX0LYsIcLKYlLbRF3EN5gW4";
 interface QuizQuestion {
   pergunta: string;
   alternativas: string[];
-  correcta: number;
+  correta: number; // ✅ Correto
 }
+
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
@@ -76,17 +77,33 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [result]);
 
-  // Limpa HTML e trata KaTeX
-  const cleanHtmlResult = (html: string): string => {
-    if (!html) return "";
-    return html
-      .replace(/background-color:\s*#[0-9a-fA-F]{3,6}/gi, "background-color: transparent")
-      .replace(/background-color:\s*white/gi, "background-color: transparent")
-      .replace(/border:\s*1px\s*solid\s*#ddd/gi, "border: 1px solid #333")
-      .replace(/font-family:\s*Arial,\s*sans-serif;/gi, "")
+// Limpa HTML e trata KaTeX (versão final — remove duplicações e artefatos invisíveis)
+const cleanHtmlResult = (html: string): string => {
+  if (!html) return "";
+
+  // Evita reprocessar se o texto já tiver fórmulas renderizadas
+  const alreadyHasMath = html.includes("katex") || html.includes('<span class="math"');
+
+  let cleaned = html
+    .replace(/<style[\s\S]*?<\/style>/gi, "") // Remove estilos vindos do backend
+    .replace(/background-color:\s*(white|#[0-9a-fA-F]{3,6})/gi, "background-color: transparent")
+    .replace(/border:\s*1px\s*solid\s*#ddd/gi, "border: 1px solid #333")
+    .replace(/font-family:[^;]+;/gi, "")
+    // 🔧 Remove caracteres invisíveis Unicode (ZWSP, ZWNJ, etc.) que causam duplicações tipo FR​=m⋅a
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  // Apenas adiciona marcações KaTeX se o texto ainda não tiver sido processado
+  if (!alreadyHasMath) {
+    cleaned = cleaned
       .replace(/\$\$([^$]+)\$\$/g, '<span class="math">$1</span>')
       .replace(/\$([^$]+)\$/g, '<span class="math">$1</span>');
-  };
+  }
+
+  return cleaned;
+};
+
 
   // Busca principal no backend Flask
   const runSearch = async (currentQuery: string) => {
@@ -173,11 +190,15 @@ export default function Dashboard() {
   const handleAnswerSelect = (i: number, j: number) => {
     if (!quizResults[i]) setSelectedAnswers((p) => ({ ...p, [i]: j }));
   };
+
   const handleSubmitQuiz = () => {
     let r: { [k: number]: "correct" | "incorrect" } = {};
     let acertos = 0;
     quizQuestions.forEach((q, i) => {
-      if (selectedAnswers[i] === q.correcta) {
+      // Garante que selectedAnswers[i] é um número antes de comparar
+      const userAnswer = selectedAnswers[i] !== undefined ? selectedAnswers[i] : -1; 
+      
+      if (userAnswer === q.correta) {
         r[i] = "correct";
         acertos++;
       } else r[i] = "incorrect";
@@ -185,6 +206,7 @@ export default function Dashboard() {
     setQuizResults(r);
     setQuizScore(`✅ Acertou ${acertos} de ${quizQuestions.length}!`);
   };
+
   const allQuestionsAnswered = Object.keys(selectedAnswers).length === quizQuestions.length;
 
   if (loading || !user)
@@ -219,29 +241,32 @@ export default function Dashboard() {
             {apiLoading ? "Buscando..." : "Pesquisar"}
           </button>
 
-          <div className="flex items-center justify-center gap-3 mt-3">
-            <label
-              htmlFor="enem-toggle"
-              className={`font-medium ${isEnemMode ? "text-green-400" : "text-gray-500"}`}
-            >
-              Modo Foco ENEM/Vestibular
-            </label>
-            <button
-              id="enem-toggle"
-              role="switch"
-              aria-checked={isEnemMode ? "true" : "false"}
-              onClick={() => setIsEnemMode(!isEnemMode)}
-              className={`relative inline-flex items-center h-6 rounded-full w-11 ${
-                isEnemMode ? "bg-green-600" : "bg-gray-600"
-              }`}
-            >
-              <span
-                className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                  isEnemMode ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
-          </div>
+<div className="flex items-center justify-center gap-3 mt-3">
+  <label
+    htmlFor="enem-toggle"
+    className={`font-medium ${isEnemMode ? "text-green-400" : "text-gray-500"}`}
+  >
+    Modo Foco ENEM/Vestibular
+  </label>
+  <button
+    id="enem-toggle"
+    role="switch"
+    aria-checked={isEnemMode} // ✅ Corrigido: agora envia boolean, não string
+    aria-label="Ativar ou desativar modo ENEM/Vestibular"
+    onClick={() => setIsEnemMode(!isEnemMode)}
+    type="button" // ✅ evita submit acidental
+    className={`relative inline-flex items-center h-6 rounded-full w-11 ${
+      isEnemMode ? "bg-green-600" : "bg-gray-600"
+    }`}
+  >
+    <span
+      className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+        isEnemMode ? "translate-x-6" : "translate-x-1"
+      }`}
+    />
+  </button>
+</div>
+
         </form>
 
         <div className="mt-auto">
@@ -332,7 +357,7 @@ export default function Dashboard() {
                     {q.alternativas.map((alt, j) => {
                       const selected = selectedAnswers[i] === j;
                       const resultClass =
-                        quizResults[i] === "correct" && j === q.correcta
+                        quizResults[i] === "correct" && j === q.correta
                           ? "bg-green-700"
                           : quizResults[i] === "incorrect" && selected
                           ? "bg-red-700"
@@ -366,17 +391,7 @@ export default function Dashboard() {
               {quizScore && (
                 <div className="mt-4 text-center">
                   <p className="font-semibold text-green-400">{quizScore}</p>
-                  <button
-                    onClick={() => {
-                      setQuizQuestions([]);
-                      setSelectedAnswers({});
-                      setQuizResults({});
-                      setQuizScore(null);
-                    }}
-                    className="mt-3 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm"
-                  >
-                    🔁 Refazer Quiz
-                  </button>
+
                 </div>
               )}
             </div>
